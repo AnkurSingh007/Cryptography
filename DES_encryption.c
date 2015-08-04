@@ -261,10 +261,9 @@ void fillbits(unsigned char * bits, unit *unit_ele)
 {
 	int i ;
 	for(i = 0; i < 64; i++){
-		printf("for i = %d\n",i);
-		if(bits[i] == 1)unit_ele = (unit *)(*(int64_t*)unit_ele | ((int64_t)1<<(63 - i)));
+		if(bits[i] == 1)*(int64_t *)unit_ele = (*(int64_t*)unit_ele | ((int64_t)1<<(63 - i)));
 		else{
-			unit_ele = (unit *)(*(int64_t *)unit_ele & ~((int64_t)1 << (63 - i)));	
+			*(int64_t *)unit_ele = (*(int64_t *)unit_ele & ~((int64_t)1 << (63 - i)));	
 		}
 	}
 	

@@ -166,7 +166,7 @@ unit* get_tokens(unsigned char *message, int size, unit* unit_arr);
 unsigned char * permutedarr_initial(unsigned char*  bits);
 unsigned char * permutedarr_final(unsigned char*  bits);
 void printbinary(char c);
-
+void print_message(unit * unit_arr, int size);
 
 
 
@@ -194,14 +194,14 @@ int main()
 	size = padding(message);//paddint the message for 64 bit block 
 	printf("size of message is%d\n",size);
 	unit_arr = get_tokens(message, size, unit_arr);
-	size = size / 8;//size of unit_arr
+	size = size / 8 + (size % 8 == 0 ? 0 : 1);//size of unit_arr
 	initial_permutation(unit_arr, size);
 	
-	printf("%c %c %c %c %c %c %c %c\n", unit_arr[0].a.a, unit_arr[0].a.b, unit_arr[0].a.c, unit_arr[0].a.d, unit_arr[0].b.a, unit_arr[0].b.b, unit_arr[0].b.c, unit_arr[0].b.d);
+	print_message(unit_arr, size);
 
 	final_permutation(unit_arr, size);
 
-	printf("%c %c %c %c %c %c %c %c\n", unit_arr[0].a.a, unit_arr[0].a.b, unit_arr[0].a.c, unit_arr[0].a.d, unit_arr[0].b.a, unit_arr[0].b.b, unit_arr[0].b.c, unit_arr[0].b.d);
+	print_message(unit_arr, size);
     	
 	return 0;
 }
@@ -361,4 +361,18 @@ int i;
 		else printf("0");
 	}
 printf("\n");
+}
+
+void print_message(unit * unit_arr, int size)
+{
+	int i, j;
+	i = j = 0;	
+	unsigned char * temp = (unsigned char *)unit_arr;
+	for(i = 0; i < size; i++){
+		for(j = 0; j < 8; j++){
+			if(*temp != '*') printf("%c",*temp);
+			temp++;
+		}
+	}
+	printf("\n");
 }

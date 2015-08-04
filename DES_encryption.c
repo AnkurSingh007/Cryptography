@@ -7,6 +7,9 @@
 #define LIMIT 1000
 
 
+
+
+
 typedef struct Token{
     unsigned char a, b, c, d;
 }token;
@@ -14,25 +17,35 @@ typedef struct Unit{
     token a, b;
 }unit;
 
-int  INITIAL_PERMUTATION[8][8] = {
-											{58 ,50 ,42 ,34 ,26 ,18 ,10 ,2}	,
-											{60 ,52 ,44 ,36 ,28 ,20 ,12 ,4},
-											{62 ,54 ,46 ,38 ,30 ,22 ,14 ,6},
-											{64 ,56 ,48 ,40 ,32 ,24 ,16 ,8},
-											{57 ,49 ,41 ,33 ,25 ,17 ,9 ,1},
-											{59 ,51 ,43 ,35 ,27 ,19 ,11 ,3},
-											{61 ,53 ,45 ,37 ,29 ,21 ,13 ,5},
-											{63 ,55 ,47 ,39 ,31 ,23 ,15 ,7}
-										};
-int FINAL_PERMUTATION[8][8] =  {
-									{40 ,8 ,48 ,16 ,56 ,24 ,64 ,32},
-									{39 ,7 ,47 ,15 ,55 ,23 ,63 ,31},
-									{38 ,6 ,46 ,14 ,54 ,22 ,62 ,30},
-									{37 ,5 ,45 ,13 ,53 ,21 ,61 ,29},
-									{36 ,4 ,44 ,12 ,52 ,20 ,60 ,28},
-									{35 ,3 ,43 ,11 ,51 ,19 ,59 ,27},
-									{34 ,2 ,42 ,10 ,50 ,18 ,58 ,26},
-									{33 ,1 ,41 ,9 ,49 ,17 ,57 ,25}
+
+
+
+
+
+
+
+
+
+int  INITIAL_PERMUTATION[64] = {
+											58 ,50 ,42 ,34 ,26 ,18 ,10 ,2, 
+											60 ,52 ,44 ,36 ,28 ,20 ,12 ,4,
+											62 ,54 ,46 ,38 ,30 ,22 ,14 ,6,
+											64 ,56 ,48 ,40 ,32 ,24 ,16 ,8,
+											57 ,49 ,41 ,33 ,25 ,17 ,9 ,1,
+											59 ,51 ,43 ,35 ,27 ,19 ,11 ,3,
+											61 ,53 ,45 ,37 ,29 ,21 ,13 ,5,
+											63 ,55 ,47 ,39 ,31 ,23 ,15 ,7
+								};
+							
+int FINAL_PERMUTATION[64] =  {
+									40 ,8 ,48 ,16 ,56 ,24 ,64 ,32,
+									39 ,7 ,47 ,15 ,55 ,23 ,63 ,31,
+									38 ,6 ,46 ,14 ,54 ,22 ,62 ,30,
+									37 ,5 ,45 ,13 ,53 ,21 ,61 ,29,
+									36 ,4 ,44 ,12 ,52 ,20 ,60 ,28,
+									35 ,3 ,43 ,11 ,51 ,19 ,59 ,27,
+									34 ,2 ,42 ,10 ,50 ,18 ,58 ,26,
+									33 ,1 ,41 ,9 ,49 ,17 ,57 ,25
 								};
 								
 int EXPENSION_PERMUTATION[8][6] = {
@@ -133,13 +146,37 @@ int PERMUTATION_CHOICE2[8][6] = {
 								};
 int LEFT_SHIFTS[16] = {1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1};								
 
+
+
+
+
+
+
+
+
+
+
 void initial_permutation(unit* unit_arr, int size);
+void final_permutation(unit* unit_arr, int size);
 int padding(unsigned char * message);
 void getbits(unsigned char * bits, unit unit_ele);
 void fillbits(unsigned char * bits, unit * unit_ele);
 void setbit(unsigned char * message, unsigned char bit);
 unit* get_tokens(unsigned char *message, int size, unit* unit_arr);
-void swap(unsigned char * bits, int j, int k);
+unsigned char * permutedarr_initial(unsigned char*  bits);
+unsigned char * permutedarr_final(unsigned char*  bits);
+void printbinary(char c);
+
+
+
+
+
+
+
+
+
+
+
 
 int main()
 {
@@ -159,10 +196,30 @@ int main()
 	unit_arr = get_tokens(message, size, unit_arr);
 	size = size / 8;//size of unit_arr
 	initial_permutation(unit_arr, size);
+	
+	printf("%c %c %c %c %c %c %c %c\n", unit_arr[0].a.a, unit_arr[0].a.b, unit_arr[0].a.c, unit_arr[0].a.d, unit_arr[0].b.a, unit_arr[0].b.b, unit_arr[0].b.c, unit_arr[0].b.d);
+
+	final_permutation(unit_arr, size);
+
 	printf("%c %c %c %c %c %c %c %c\n", unit_arr[0].a.a, unit_arr[0].a.b, unit_arr[0].a.c, unit_arr[0].a.d, unit_arr[0].b.a, unit_arr[0].b.b, unit_arr[0].b.c, unit_arr[0].b.d);
     	
 	return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 //This function assumes limit withing 1000
@@ -189,26 +246,44 @@ void initial_permutation(unit*  unit_arr, int size)
     int i;
     int j, k;
     for(i = 0; i < size ; i++){     
-		unsigned char bits[64];
+		unsigned char* bits = (unsigned char*)malloc(sizeof(unsigned char) * 64);
+		unsigned char* result = (unsigned char*)malloc(sizeof(unsigned char) * 64);
 		//Filling bits with bits of the structure to pass into swap function
 		getbits(bits, unit_arr[i]);
-		printf("before permutation bits are\n");
-		for(j = 0; j < 64; j++)
-			printf("%d ",bits[j]);
-		printf("\n");
-        for(j = 0; j < 8; j++){
-            for(k = 0; k < 8; k++){
-                printf("swapping for j = %d and k = %d\n",j,k);
-                swap(bits, j, k);
-            }
-        }
-		printf("after permutation bits are\n");
-		for(j = 0; j < 64; j++)
-			printf("%d ",bits[j]);
-		printf("\n");
-		fillbits(bits, &unit_arr[i]);		
+     	result = permutedarr_initial(bits);
+		fillbits(result, &unit_arr[i]);	
+		free(bits);	
+		free(result);
     }           
 }
+
+
+void final_permutation(unit * unit_arr, int size){
+	  int i, j, k;
+    for(i = 0; i < size ; i++){     
+		unsigned char* bits = (unsigned char*)malloc(sizeof(unsigned char) * 64);
+		unsigned char* result = (unsigned char*)malloc(sizeof(unsigned char) * 64);
+		//Filling bits with bits of the structure to pass into swap function
+		getbits(bits, unit_arr[i]);
+     	result = permutedarr_final(bits);
+		//printf("after permutation bits are\n");
+		fillbits(result, &unit_arr[i]);	
+		free(bits);	
+		free(result);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -218,12 +293,20 @@ void initial_permutation(unit*  unit_arr, int size)
 
 //Helper Functions
 
-void swap(unsigned char*  bits, int j, int k){
-	int pos1 = j * 8 + k;
-	int pos2 = INITIAL_PERMUTATION[j][k] - 1;
-    int temp = bits[pos1];
-	bits[pos1] = bits[pos2];
-	bits[pos2] = temp;      
+unsigned char * permutedarr_initial(unsigned char*  bits){
+	int i ;
+	unsigned char * result = (unsigned char *)malloc(sizeof(unsigned char *) * 64);
+	for(i = 0; i < 64; i++)
+		result[i] = bits[INITIAL_PERMUTATION[i] - 1];
+	return result;
+}
+
+unsigned char * permutedarr_final(unsigned char*  bits){
+	int i ;
+	unsigned char * result = (unsigned char *)malloc(sizeof(unsigned char *) * 64);
+	for(i = 0; i < 64; i++)
+		result[i] = bits[FINAL_PERMUTATION[i] - 1];
+	return result;
 }
 
 
@@ -232,10 +315,10 @@ void getbits(unsigned char * bits, unit unit_ele){
 	int i , j;
     unsigned char * temp = (unsigned char*)&unit_ele;
 	for(i = 0; i < 8; i++){
-		temp++;
 		for(j = 0; j< 8; j++){
-			bits[i * 8 + j] = (*temp & (1 << j)) > 0 ? 1 : 0 ;
+			bits[i * 8 + j] = (*temp & (1 << (7 - j))) > 0 ? 1 : 0 ;
 		}
+	temp++;
 	}
 }
 
@@ -259,12 +342,23 @@ unit* get_tokens(unsigned char *message, int size, unit* unit_arr){
 
 void fillbits(unsigned char * bits, unit *unit_ele)
 {
-	int i ;
-	for(i = 0; i < 64; i++){
-		if(bits[i] == 1)*(int64_t *)unit_ele = (*(int64_t*)unit_ele | ((int64_t)1<<(63 - i)));
-		else{
-			*(int64_t *)unit_ele = (*(int64_t *)unit_ele & ~((int64_t)1 << (63 - i)));	
-		}
+	int i , j;
+	unsigned char * temp = (unsigned char *)unit_ele;
+	for(i = 0; i < 8; i++){
+		for(j = 0; j < 8; j++){
+				if(bits[i * 8 + j])*temp |= 1<<(7 - j);
+				else *temp &= ~(1<<(7 - j));
+			}
+			temp++;
 	}
-	
+}
+
+void printbinary(char c){
+int i;
+	printf("char is %c\n",c);
+	for(i = 0; i< sizeof(char) * 8; i++){
+		if((c & (1 << (sizeof(char)*8 - 1 - i))) > 0)printf("1");
+		else printf("0");
+	}
+printf("\n");
 }

@@ -26,6 +26,8 @@ typedef struct Unit{
 
 
 
+
+
 int  INITIAL_PERMUTATION[64] = {
 											58 ,50 ,42 ,34 ,26 ,18 ,10 ,2, 
 											60 ,52 ,44 ,36 ,28 ,20 ,12 ,4,
@@ -123,15 +125,15 @@ int SBOX8[4][16] = {
 						{2 ,1 ,14 ,7 ,4 ,10 ,8 ,13 ,15 ,12 ,9 ,0 ,3 ,5 ,6 ,11}
 					};
 	
-int PERMUTATION_CHOICE1[8][7] = {
-									{57 ,49 ,41 ,33 ,25 ,17 ,9},
-									{1 ,58 ,50 ,42 ,34 ,26 ,18},
-									{10 ,2 ,59 ,51 ,43 ,35 ,27},
-									{19 ,11 ,3 ,60 ,52 ,44 ,36},
-									{63 ,55 ,47 ,39 ,31 ,23 ,15},
-									{7 ,62 ,54 ,46 ,38 ,30 ,22},
-									{14 ,6 ,61 ,53 ,45 ,37 ,29},
-									{21 ,13 ,5 ,28 ,20 ,12 ,4}
+int PERMUTATION_CHOICE1[56] = {
+									57 ,49 ,41 ,33 ,25 ,17 ,9,
+									1 ,58 ,50 ,42 ,34 ,26 ,18,
+									10 ,2 ,59 ,51 ,43 ,35 ,27,
+									19 ,11 ,3 ,60 ,52 ,44 ,36,
+									63 ,55 ,47 ,39 ,31 ,23 ,15,
+									7 ,62 ,54 ,46 ,38 ,30 ,22,
+									14 ,6 ,61 ,53 ,45 ,37 ,29,
+									21 ,13 ,5 ,28 ,20 ,12 ,4
 								};
 			
 int PERMUTATION_CHOICE2[8][6] = {
@@ -159,7 +161,11 @@ int LEFT_SHIFTS[16] = {1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1};
 void initial_permutation(unit* unit_arr, int size);
 void final_permutation(unit* unit_arr, int size);
 int padding(unsigned char * message);
+unit * permutation_c1(unit * key);
+
+
 void getbits(unsigned char * bits, unit unit_ele);
+void getbits_permutchoice1(unsigned char * bits, unit * unit_ele);
 void fillbits(unsigned char * bits, unit * unit_ele);
 void setbit(unsigned char * message, unsigned char bit);
 unit* get_tokens(unsigned char *message, int size, unit* unit_arr);
@@ -167,8 +173,10 @@ unsigned char * permutedarr_initial(unsigned char*  bits);
 unsigned char * permutedarr_final(unsigned char*  bits);
 void printbinary(char c);
 void print_message(unit * unit_arr, int size);
-
-
+unsigned char * permutated_choice1(int64_t key);
+void get_message(char * message);
+unit * generate_key();
+void getbits_56(char * bits, unit * unit_ele);
 
 
 
@@ -181,27 +189,26 @@ void print_message(unit * unit_arr, int size);
 int main()
 {
     int size = 0;
-    unsigned char dummychar;
-	int64_t key;//64 bit integer guranteed
 	unit * unit_arr;
+	unit * key;
 	unsigned char message[LIMIT];
-	printf("Enter the key\n");
-	scanf("%ld",&key);
-	dummychar = getchar();//to cut out the newline key pressed at the end
-	printf("Enter the message.\nMaximum 1000 unsigned characters allowed\n");
-	scanf("%[^\n]s",message);
-	
+	key = generate_key();
+	key = permutation_c1(key);//56 bit key
+	get_message(message);
 	size = padding(message);//paddint the message for 64 bit block 
 	printf("size of message is%d\n",size);
 	unit_arr = get_tokens(message, size, unit_arr);
 	size = size / 8 + (size % 8 == 0 ? 0 : 1);//size of unit_arr
-	initial_permutation(unit_arr, size);
 	
+	initial_permutation(unit_arr, size);
+	printf("done till erh\n");
 	print_message(unit_arr, size);
-
+		
+	
 	final_permutation(unit_arr, size);
 
 	print_message(unit_arr, size);
+
     	
 	return 0;
 }
@@ -245,10 +252,12 @@ void initial_permutation(unit*  unit_arr, int size)
 {
     int i;
     int j, k;
+	printf("entered here\n");
     for(i = 0; i < size ; i++){     
+		printf("doing for i = %d\n", i);
 		unsigned char* bits = (unsigned char*)malloc(sizeof(unsigned char) * 64);
 		unsigned char* result = (unsigned char*)malloc(sizeof(unsigned char) * 64);
-		//Filling bits with bits of the structure to pass into swap function
+		printf("memory allocated\n");
 		getbits(bits, unit_arr[i]);
      	result = permutedarr_initial(bits);
 		fillbits(result, &unit_arr[i]);	
@@ -274,8 +283,62 @@ void final_permutation(unit * unit_arr, int size){
 }
 
 
-
-
+unit * permutation_c1(unit * key )//size of bits is 56
+{
+	int i, j ;
+	unit * final_key;
+	
+	unsigned char * bits = (unsigned char *)malloc(sizeof(unsigned char) * 64);
+	unsigned char * result = (unsigned char *)malloc(sizeof(unsigned char) * 64);
+	getbits(bits, *key);
+	for(i = 0; i < 64; i++)
+		result[i] = bits[PERMUTATION_CHOICE1[i] - 1];
+	//getting 56 bits from 64 bits;
+	final_key = (unit *)malloc(sizeof(unit) * 1);
+	free(bits);
+	bits = (unsigned char * )malloc(sizeof(unsigned char)*56);
+	//getting relevent 56 bits from 64 bits
+	for(i = 0; i < 8; i++){
+		for(j = 0; j < 7; j++){
+				bits[i * 8 + j] = *result;
+				result++;
+			if(j == 6)result++;//ignoring parity bit
+		}
+	}
+	unsigned char * temp = (unsigned char * )final_key;
+	//taking first 3 bits into unit
+	for(i = 0; i < 3; i++){
+		for(j = 0; j < 8 ;j++)
+			if(bits[i * 8 + j])*temp |= (1 <<(8 - j));
+			else *temp &= ~(1 << (8 - j));
+			temp++;
+	}
+	//special case for 4th bit and 5th bit .
+	//4th bit of the form (first four bits from 28)0000 
+	//5th bit of the form 0000(last four bits from 32)
+	for(i = 0; i < 8; i++){
+		if(bits[24 + i])*temp |= (1 <<(8 - j));
+		else *temp &= ~(1 << (8 - j));
+	}
+	*temp >>= 4;
+	*temp <<= 4;//getting most significant 4 bits
+	temp++;
+	for(i = 0; i < 8; i++){
+		if(bits[24 + i])*temp |= (1 <<(8 - j));
+		else *temp &= ~(1 << (8 - j));
+	}
+	*temp &= 15;//getting least significan 4 bits;
+	//getting last 3 bytes
+	temp++;
+	for(i = 0; i < 3; i++){
+		for(j = 0; j < 8 ;j++)
+			if(bits[i * 8 + j])*temp |= (1 <<(8 - j));
+			else *temp &= ~(1 << (8 - j));
+			temp++;
+	}
+	free(bits);
+	return final_key;
+}
 
 
 
@@ -322,6 +385,16 @@ void getbits(unsigned char * bits, unit unit_ele){
 	}
 }
 
+void getbits_permutchoice1(unsigned char * bits, unit * unit_ele){
+	int i , j;
+    unsigned char * temp = (unsigned char*)unit_ele;
+	for(i = 0; i < 7; i++){
+		for(j = 0; j< 8; j++){
+			bits[i * 8 + j] = (*temp & (1 << (7 - j))) > 0 ? 1 : 0 ;
+		}
+	temp++;
+	}
+}
 
 unit* get_tokens(unsigned char *message, int size, unit* unit_arr){
     unit_arr = (unit *)malloc(sizeof(unit) * (size / 8));
@@ -375,4 +448,57 @@ void print_message(unit * unit_arr, int size)
 		}
 	}
 	printf("\n");
+}
+
+//generate unit as 2 structures for key c0 and d0
+unit * generate_key(){
+	int i = 0;
+	char c;
+	unit*  temp;
+	unsigned char  *key = (unsigned char *)malloc(sizeof(unsigned char) * 8);
+	unsigned char * tempchar = (unsigned char *)temp;
+	printf("Enter the 64 bit key\n");
+	for(i = 0; i < 8; i++){
+		key[i] = getchar();
+	}
+	for(i = 0; i < 8; i++){
+		*tempchar = key[i];
+		tempchar++;	
+	}
+	free(key);
+	return temp;
+}
+
+void get_message(char * message){
+	   unsigned char dummychar;
+	dummychar = getchar();//to cut out the newline key pressed at the end
+	printf("Enter the message.\nMaximum 1000 unsigned characters allowed\n");
+	scanf("%[^\n]s",message);
+}
+
+void getbits_56(char * bits, unit * unit_ele)
+{
+	int i = 0; 
+	unsigned char * temp = (unsigned char *)&unit_ele;
+	for(i = 0; i < 8; i++){
+		bits[i] = *temp;
+		printf("%c",*temp);
+		temp++;
+	}
+	printf("\n");
+}
+
+
+
+fillbits_56(char * result, unit *unit_arr)
+{
+	int i , j;
+	unsigned char * temp = (unsigned char *)unit_arr;
+	for(i = 0; i < 7; i++){
+		for(j = 0; j < 8; j++){
+				if(result[i * 8 + j])*temp |= 1<<(7 - j);
+				else *temp &= ~(1<<(7 - j));
+			}
+			temp++;
+	}
 }

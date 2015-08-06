@@ -131,7 +131,7 @@ static const int PERMUTATION_CHOICE2[48] = {
      41, 52, 31, 37, 47, 55 ,
      30, 40, 51, 45, 33, 48 ,
      44, 49, 39, 56, 34, 53 ,
-     46, 42, 50, 36, 29, 32 
+     46, 42, 50, 36, 29, 32
 };
 static const int LEFT_SHIFTS[16] = { 1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1 };
 
@@ -161,8 +161,8 @@ int main()
 	unit * round_keys;
     tokenize_message(&unit_arr, &size);
     key = generate_key();
-	generate_roundkeys(key);
-	//printf("%c%c%c%c%c\n",key.a.a, key.a.b, key.a.c, key.a.d, key.b.a);
+	  round_keys = generate_roundkeys(key);
+
     initial_permutation(unit_arr, size);
     print_message(unit_arr, size);
   //  key = permutation_c1(key);
@@ -208,12 +208,9 @@ void initial_permutation(unit* unit_arr, int size)
 {
     int i;
     int j, k;
-    printf("entered here\n");
     for (i = 0; i < size; i++) {
-        printf("doing for i = %d\n", i);
         unsigned char* bits = (unsigned char*)malloc(sizeof(unsigned char) * 64);
         unsigned char* result = (unsigned char*)malloc(sizeof(unsigned char) * 64);
-        printf("memory allocated\n");
         getbits(bits, unit_arr[i], FULL);
         result = permutedarr_initial(bits);
         fillbits(result, &unit_arr[i]);
@@ -221,7 +218,7 @@ void initial_permutation(unit* unit_arr, int size)
 	//fprintf(stderr, "%d\n", __LINE__);
         free(bits);
         free(result);
-		
+
 	//fprintf(stderr, "%d\n", __LINE__);
     }
 }
@@ -376,111 +373,152 @@ void get_message(unsigned char* message)
 
 unit*  generate_roundkeys(unit key)
 {
-	int j = 0;
-	unit * key_arr = (unit *)	malloc(sizeof(unit) * 16);
-	unit k = key;
-	int64_t * tracekey = (int64_t *)&k;
-	printf("working on roundkey function\n");
 	int i = 0;
+	int j = 0;
+	unit * key_arr = (unit *)malloc(sizeof(unit) * 16);
+	unit k = key;
+	 uint64_t * tracekey = ( uint64_t *)&k;
+	printf("printing key\n");
+	for(i = 0; i < 64; i++){
+		if(*tracekey & (1L << (63 - i)))
+				printf("1");
+		else
+				printf("0");
+	}
+	printf("\n");
+
+	printf("working on roundkey function\n");
 	token t1, t2;
-	int32_t * trace = (int32_t *)&t1;
+	uint32_t * trace = (uint32_t *)&t1;
 	//generating first token C0
-	for(i = 0; i < 32; i++){			
+	for(i = 0; i < 32; i++){
 		if(i < 28){
 			if(*tracekey & (1L << (64 - PERMUTATION_CHOICE1[i])))
 				*trace |= (1 << (31 - i));
-			else 
+			else
 				*trace &= ~(1 << (31 - i));
 		}
 		else{
 			*trace &= ~(1 << (31 - i));
 		}
 	}
-	
+  printf("printing  C0\n");
+  trace = (uint32_t *)&t1;
+  for(i = 0; i < 32; i++){
+    if(*trace & (1<<(31 - i)))printf("1");
+    else printf("0");
+  }
+  printf("\n");
 	//generating second token D0
-	trace = (int32_t *)&t2;
+  trace = (uint32_t *)&t2;
 	for(i = 32; i < 64; i++){
 		if(i < 60){
-			if(*tracekey & (1L << (64 - PERMUTATION_CHOICE1[i - 4])))*trace |= (1L << (64 - i));
-			else *trace &= ~(1L << (64 - i));
+			if(*tracekey & (1L << (64 - PERMUTATION_CHOICE1[i - 4])))*trace |= (1L << (63 - i));
+			else *trace &= ~(1L << (63 - i));
 		}
 		else{
-			*trace &= ~(1L << (64 - i));
+			*trace &= ~(1L << (63 - i));
 		}
 	}
-	
-//tested till here successfully
+  trace = (uint32_t *)&t2;
+  printf("printing for D0\n");
+  for(i = 0; i < 32; i++){
+    if(*trace & (1<<(31 - i)))printf("1");
+    else printf("0");
+  }
+  printf("\n");
+	//tested till here successfully
 	//working on producing round keys
 	for(i = 0; i <= 16 ; i++){
+      printf("printing for i = %d\n",i);
 			if(i == 0){
 				t1 = rotate_key_left(t1, LEFT_SHIFTS[0]);
-				trace = (unsigned int *)&t2;
+        printf("printing for t1 after shift\n");
+        trace = (uint32_t *)&t1;
+        for(j = 0; j < 32; j++){
+          if(*trace & (1<<(31 - j)))printf("1");
+          else printf("0");
+        }
+        printf("\n");
 				t2 = rotate_key_left(t2, LEFT_SHIFTS[0]);
+        printf("printing for t2 after shift\n");
+        trace = (uint32_t *)&t2;
+        for(j = 0; j < 32; j++){
+          if(*trace & (1<<(31 - j)))printf("1");
+          else printf("0");
+        }
+        printf("\n");
 			}
 			else{
-					t1 = rotate_key_left(t1, LEFT_SHIFTS[0]);
-					trace = (int32_t *)&t2;
-					t2 = rotate_key_left(t2, LEFT_SHIFTS[0]);
-					int64_t * pointer;
+          printf("entered into else\n");
+					t1 = rotate_key_left(t1, LEFT_SHIFTS[i - 1]);
+					trace = (uint32_t *)&t1;
+          printf("printing for t1 after shift\n");
+          trace = (uint32_t *)&t1;
+          for(j = 0; j < 32; j++){
+            if(*trace & (1<<(31 - j)))printf("1");
+            else printf("0");
+          }
+          printf("\n");
+					t2 = rotate_key_left(t2, LEFT_SHIFTS[i - 1]);
+					uint64_t * pointer;
 					unit temp;
 					temp.a= t1;temp.b = t2;
-					pointer = (unsigned long *)&temp;
-					int32_t * tokenpointer = (int32_t *)&t1;
+					pointer = (uint64_t *)&temp;
+					uint32_t * tokenpointer = (int32_t *)&t1;
 					for(j = 0; j < 28; j++){
 						if(*tokenpointer & (1 <<(31 - j)))*pointer |= (1L << (63 - j));
 						else *pointer &= ~(1 << (63 - j));
 					}
-					tokenpointer = (unsigned int *)&t2;
+					tokenpointer = (uint32_t *)&t2;
 					for(j = 28; j < 56; j++){
-						if(*tokenpointer & (59 - j))*pointer |= (1L << (63 - j));
+						if(*tokenpointer & (1<<(59 - j)))*pointer |= (1L << (63 - j));
 						else *pointer &= ~(1 << (63 - j));
 					}
 					//temp now contains 56 bits
 					//permutating
 					unit result;
-					unsigned long * resultpointer = (unsigned long * )&result;
+					uint64_t * resultpointer = (uint64_t * )&result;
 					for(j = 0; j < 56; j++){
 						if(j < 48){
 							if(*tokenpointer & (1<<(56 - PERMUTATION_CHOICE2[j])))
 								*resultpointer |= (1L << (63 - j));
-							else 	
+							else
 								*resultpointer &= ~(1 << (63 - j));
 						}
 						else{
 							*resultpointer &= ~(1 << (63 - j));
 						}
 					 }
-				key_arr[i - 1] = result;
-			}		
+           printf("printing for resultpointer after permutation\n");
+           resultpointer = (uint32_t *)&t2;
+           for(j = 0; j < 32; j++){
+             if(*trace & (1<<(31 - j)))printf("1");
+             else printf("0");
+           }
+           printf("\n");
+				   key_arr[i - 1] = result;
+			}
 	}
 	return key_arr;
 }
 
+
+
 token rotate_key_left(token t, int shift){
 	token here = t;
-	 int32_t * trace = ( int32_t * )&here;
-	printf("%d %d %d %d\n",here.a, here.b, here.c, here.d);
+	uint32_t * trace = (uint32_t * )&here;
 	unsigned int * shifts = (unsigned int * )malloc(sizeof(unsigned char) * shift);
 	int i = 0;
 	int j = 0;
-	for(i = 0; i < 32; i++){
-		if(*trace & (1<<(31 - i)))printf("1");
-		else printf("0");
-	}	
-	printf("\n");
-	
 	for(i  = 0; i < shift; i++){
 		if(*trace & (1<<(31 - i)))shifts[i] = 1;
 		else shifts[i] = 0;
 	}
-	for(j = 0; j < shift; j++)
-		printf("%d",shifts[j]);
 	*trace <<= shift;
-	printf("after shift\n");
-	printf("%d %d %d %d\n",here.a, here.b, here.c, here.d);
 	for(i = 0; i < shift; i++){
-		if(shifts[i])*trace |= (1<<(28 - shift + i));
-		else *trace &= ~(1<<(28 - shift + i));
+		if(shifts[i])*trace |= (1<<(3 + shift - i));
+		else *trace &= ~(1<<(3 + shift - i));
 	}
 	free(shifts);
 	return here;

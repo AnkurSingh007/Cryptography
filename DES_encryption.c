@@ -123,15 +123,15 @@ static const int PERMUTATION_CHOICE1[56] = {
     21, 13, 5, 28, 20, 12, 4
 };
 
-static const int PERMUTATION_CHOICE2[8][6] = {
-    { 14, 17, 11, 24, 1, 5 },
-    { 3, 28, 15, 6, 21, 10 },
-    { 23, 19, 12, 4, 26, 8 },
-    { 16, 7, 27, 20, 13, 2 },
-    { 41, 52, 31, 37, 47, 55 },
-    { 30, 40, 51, 45, 33, 48 },
-    { 44, 49, 39, 56, 34, 53 },
-    { 46, 42, 50, 36, 29, 32 }
+static const int PERMUTATION_CHOICE2[48] = {
+     14, 17, 11, 24, 1, 5 ,
+     3, 28, 15, 6, 21, 10 ,
+     23, 19, 12, 4, 26, 8 ,
+     16, 7, 27, 20, 13, 2 ,
+     41, 52, 31, 37, 47, 55 ,
+     30, 40, 51, 45, 33, 48 ,
+     44, 49, 39, 56, 34, 53 ,
+     46, 42, 50, 36, 29, 32 
 };
 static const int LEFT_SHIFTS[16] = { 1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1 };
 
@@ -139,7 +139,7 @@ void tokenize_message(unit** unit_arr, int* size);
 void initial_permutation(unit* unit_arr, int size);
 void final_permutation(unit* unit_arr, int size);
 int padding(unsigned char* message);
-
+unit* generate_roundkeys(unit key);
 
 void getbits(unsigned char* bits, unit unit_ele, int size);
 void fillbits(unsigned char* bits, unit* unit_ele);
@@ -150,9 +150,7 @@ unsigned char* permutedarr_final(unsigned char* bits);
 void print_message(unit* unit_arr, int size);
 void get_message(unsigned char* message);
 unit generate_key();
-
-void generate_roundkeys(unit key);
-
+token rotate_key_left(token t, int shift);
 
 
 int main()
@@ -376,15 +374,16 @@ void get_message(unsigned char* message)
 }
 
 
-void  generate_roundkeys(unit key)
+unit*  generate_roundkeys(unit key)
 {
-	token * key = (token *)	malloc(sizeof(token) * 16);
+	int j = 0;
+	unit * key_arr = (unit *)	malloc(sizeof(unit) * 16);
 	unit k = key;
-	unsigned long * tracekey = (unsigned long *)&k;
+	int64_t * tracekey = (int64_t *)&k;
 	printf("working on roundkey function\n");
 	int i = 0;
 	token t1, t2;
-	unsigned int * trace = (unsigned int *)&t1;
+	int32_t * trace = (int32_t *)&t1;
 	//generating first token C0
 	for(i = 0; i < 32; i++){			
 		if(i < 28){
@@ -397,8 +396,9 @@ void  generate_roundkeys(unit key)
 			*trace &= ~(1 << (31 - i));
 		}
 	}
+	
 	//generating second token D0
-	trace = (unsigned int *)&t2;
+	trace = (int32_t *)&t2;
 	for(i = 32; i < 64; i++){
 		if(i < 60){
 			if(*tracekey & (1L << (64 - PERMUTATION_CHOICE1[i - 4])))*trace |= (1L << (64 - i));
@@ -408,8 +408,80 @@ void  generate_roundkeys(unit key)
 			*trace &= ~(1L << (64 - i));
 		}
 	}
+	
 //tested till here successfully
 	//working on producing round keys
+	for(i = 0; i <= 16 ; i++){
+			if(i == 0){
+				t1 = rotate_key_left(t1, LEFT_SHIFTS[0]);
+				trace = (unsigned int *)&t2;
+				t2 = rotate_key_left(t2, LEFT_SHIFTS[0]);
+			}
+			else{
+					t1 = rotate_key_left(t1, LEFT_SHIFTS[0]);
+					trace = (int32_t *)&t2;
+					t2 = rotate_key_left(t2, LEFT_SHIFTS[0]);
+					int64_t * pointer;
+					unit temp;
+					temp.a= t1;temp.b = t2;
+					pointer = (unsigned long *)&temp;
+					int32_t * tokenpointer = (int32_t *)&t1;
+					for(j = 0; j < 28; j++){
+						if(*tokenpointer & (1 <<(31 - j)))*pointer |= (1L << (63 - j));
+						else *pointer &= ~(1 << (63 - j));
+					}
+					tokenpointer = (unsigned int *)&t2;
+					for(j = 28; j < 56; j++){
+						if(*tokenpointer & (59 - j))*pointer |= (1L << (63 - j));
+						else *pointer &= ~(1 << (63 - j));
+					}
+					//temp now contains 56 bits
+					//permutating
+					unit result;
+					unsigned long * resultpointer = (unsigned long * )&result;
+					for(j = 0; j < 56; j++){
+						if(j < 48){
+							if(*tokenpointer & (1<<(56 - PERMUTATION_CHOICE2[j])))
+								*resultpointer |= (1L << (63 - j));
+							else 	
+								*resultpointer &= ~(1 << (63 - j));
+						}
+						else{
+							*resultpointer &= ~(1 << (63 - j));
+						}
+					 }
+				key_arr[i - 1] = result;
+			}		
+	}
+	return key_arr;
+}
 
-}		
-		
+token rotate_key_left(token t, int shift){
+	token here = t;
+	 int32_t * trace = ( int32_t * )&here;
+	printf("%d %d %d %d\n",here.a, here.b, here.c, here.d);
+	unsigned int * shifts = (unsigned int * )malloc(sizeof(unsigned char) * shift);
+	int i = 0;
+	int j = 0;
+	for(i = 0; i < 32; i++){
+		if(*trace & (1<<(31 - i)))printf("1");
+		else printf("0");
+	}	
+	printf("\n");
+	
+	for(i  = 0; i < shift; i++){
+		if(*trace & (1<<(31 - i)))shifts[i] = 1;
+		else shifts[i] = 0;
+	}
+	for(j = 0; j < shift; j++)
+		printf("%d",shifts[j]);
+	*trace <<= shift;
+	printf("after shift\n");
+	printf("%d %d %d %d\n",here.a, here.b, here.c, here.d);
+	for(i = 0; i < shift; i++){
+		if(shifts[i])*trace |= (1<<(28 - shift + i));
+		else *trace &= ~(1<<(28 - shift + i));
+	}
+	free(shifts);
+	return here;
+}

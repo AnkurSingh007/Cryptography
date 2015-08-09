@@ -157,17 +157,52 @@ uint64_t sbox(uint64_t input, int  box[][16]);
 
 int main()
 {
+    uint64_t * test64;
+    unsigned char * checkchar;
     unit* unit_arr;
     unit key;
     int size = 0;
     int i = 0;
     int j = 0;
+    int k = 0;
 	   unit * round_keys;
     tokenize_message(&unit_arr, &size);
+    printf("testing for tokenize_message\n");
+    for(i = 0 ; i < size ; i++){
+        uint64_t * test64  = (uint64_t * )&unit_arr[i];
+        unsigned char * checkchar = (unsigned char *)&unit_arr[i];
+        printf("%c",unit_arr[i].a.a);
+        printf("%c",unit_arr[i].a.b);
+        printf("%c",unit_arr[i].a.c);
+        printf("%c",unit_arr[i].a.d);
+        printf("%c",unit_arr[i].b.a);
+        printf("%c",unit_arr[i].b.b);
+        printf("%c",unit_arr[i].b.c);
+        printf("%c",unit_arr[i].b.d);
+        printf("\n");
+        for(j = 0; j < 8; j++){
+          for(k = 0; k < 8; k++){
+            if(*checkchar & (1 << (7 - k)))printf("1");
+            else printf("0");
+          }
+          printf("\n");
+          checkchar++;
+        }
+        for(j = 0 ; j < 64; j++){
+            if(*test64 & (1 << (63 - j)))printf("1");
+            else printf("0");
+        }
+        printf("\n");
+    }
     key = generate_key();
-	  round_keys = generate_roundkeys(key);
+    printf("testing generated keys\n");
+    checkchar = (unsigned char *)&key;
+    for(i = 0; i < 8; i++){
+      printf("%c",*checkchar);
+    }
+    printf("\n");
     initial_permutation(unit_arr, size);
-    print_message(unit_arr, size);
+    printf("testing initial permutation\n");
     for(i = 0; i < size; i++){
         uint32_t * leftptr = (uint32_t *)&(unit_arr[i].a);
         uint32_t * rightptr = (uint32_t *)&(unit_arr[i].b);
@@ -175,7 +210,7 @@ int main()
         uint32_t * holder;
         token temp;
 
-        for(j == 0; j < 16; j++){
+        for(j = 0; j < 16; j++){
               temp = fiestal(*(token *)rightptr, round_keys[j]);
               holder = (uint32_t * )&temp;
               *leftptr ^= *holder;
@@ -188,9 +223,16 @@ int main()
         unit_arr[i].b = *(token *)rightptr;
     }
     final_permutation(unit_arr, size);
-
+    printf("%d",size);
     print_message(unit_arr, size);
-
+    putchar(key.a.a);
+    putchar(key.a.b);
+    putchar(key.a.c);
+    putchar(key.a.d);
+    putchar(key.b.a);
+    putchar(key.b.b);
+    putchar(key.b.c);
+    putchar(key.b.d);
     return 0;
 }
 
@@ -199,9 +241,7 @@ void tokenize_message(unit** unit_arr, int* size)
     unsigned char message[LIMIT];
     *size = 0;
     get_message(message);
-    printf("got message\n");
     *size = padding(message); //paddint the message for 64 bit block
-    printf("size of message is %d\n", *size);
     *unit_arr = get_tokens(message, *size, *unit_arr);
 }
 
@@ -213,9 +253,7 @@ int padding(unsigned char* message)
         message++;
         count++;
     }
-    if (count % 8 == 0)
-        return count; //no padding required
-    else {
+    if (count % 8 != 0){
         while (count % 8 != 0) {
             *message = '*'; //used for marker for dummy
             message++;
@@ -236,7 +274,10 @@ void initial_permutation(unit* unit_arr, int size)
         getbits(bits, unit_arr[i], FULL);
         result = permutedarr_initial(bits);
         fillbits(result, &unit_arr[i]);
+        printf("checking initial permutation\n");
+        for(j = 0; j < 64; j++){
 
+        }
 	//fprintf(stderr, "%d\n", __LINE__);
         free(bits);
         free(result);
@@ -369,10 +410,10 @@ unit generate_key()
     unit temp ;
     unsigned char* key = (unsigned char*)malloc(sizeof(unsigned char) * 8);
     unsigned char* tempchar = (unsigned char*)&temp;
-    printf("Enter the 64 bit key\n");
     for (i = 0; i < 8; i++) {
         key[i] = getchar();
     }
+    c = getchar();
     for (i = 0; i < 8; i++) {
         *tempchar = key[i];
         tempchar++;
@@ -387,7 +428,6 @@ unit generate_key()
 void get_message(unsigned char* message)
 {
     unsigned char dummychar;
-    printf("Enter the message.\nMaximum 1000 unsigned characters allowed\n");
     scanf("%[^\n]s", message);
     dummychar = getchar(); //to cut out the newline key pressed at the end
 }
